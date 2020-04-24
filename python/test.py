@@ -1,4 +1,5 @@
 from user_data import UserData
+from identity_service import IdentityService
 from user_data_transaction import UserDataTransaction
 from transaction import Transaction
 from cryptography import x509
@@ -22,6 +23,8 @@ def decrypt(encrypt_key, encrypted):
     return unpadded
 
 
+ident_service = IdentityService()
+
 with open('certs/user_1.key') as user_1_key_file:
     user_1_private_key = serialization.load_pem_private_key(
         user_1_key_file.read().encode(),
@@ -33,9 +36,6 @@ with open('certs/user_1.crt') as user_1_cert_file:
     user_1_cert = x509.load_pem_x509_certificate(user_1_cert_string.encode(),
                                                  default_backend())
 
-transaction_pool = {}
-keys = {}
-
 data = json.dumps({'first_name': 'Bob', 'last_name': 'Smith'})
 
 signature = user_1_private_key.sign(
@@ -45,25 +45,10 @@ signature = user_1_private_key.sign(
 
 user_data_1 = UserData(data.encode(), signature)
 
-user_transaction_1 = UserDataTransaction(user_data_1)
-user_transaction_1_key = user_transaction_1.encryption_key
+tx_hash = ident_service.add_user_data(user_data_1)
+tx, key = ident_service.get_transaction(tx_hash)
 
-transaction_1 = Transaction(b'Base', user_transaction_1)
-
-transaction_pool[transaction_1.get_hash()] = transaction_1
-keys[transaction_1.get_hash()] = user_transaction_1_key
-
-# user_data_2 = UserData({'first_name': 'Sally', 'last_name': 'Smith'})
-# user_transaction_2 = UserDataTransaction(user_data_2)
-# transaction_2 = Transaction(transaction_1.get_hash(), user_transaction_2)
-
-# transaction_pool[transaction_2.get_hash()] = transaction_2
-# keys[transaction_2.get_hash()] = user_transaction_2.encryption_key
-
-hash_pointer = transaction_1.get_hash()
-
-a = decrypt(keys[hash_pointer],
-            transaction_pool[hash_pointer].transaction.get_data())
+a = decrypt(key, tx.transaction.get_data())
 
 len_first = int.from_bytes(a[0:8], byteorder='big')
 message = a[8:len_first + 8]
