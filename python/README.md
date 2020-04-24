@@ -1,3 +1,0 @@
-## Setup
-
-`pip install cryptography`
