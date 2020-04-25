@@ -45,7 +45,7 @@ signature = user_1_private_key.sign(
 
 user_data_1 = UserData(data.encode(), signature)
 
-tx_hash = ident_service.add_user_data(user_data_1)
+tx_hash = ident_service.add_user_data(user_data_1, user_1_cert_string)
 tx, key = ident_service.get_transaction(tx_hash)
 
 a = decrypt(key, tx.transaction.get_data())
